@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: nginx:broken-tag
+        image: nginx:1.27
         ports:
         - containerPort: 80
 
