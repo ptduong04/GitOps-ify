@@ -17,14 +17,14 @@ spec:
     spec:
       containers:
       - name: api
-        image: flask-api:v1
+        image: flask-api:v2
         imagePullPolicy: Never
         ports:
         - containerPort: 8080
           name: http
         env:
         - name: VERSION
-          value: "v1"
+          value: "v2"
         livenessProbe:
           httpGet:
             path: /healthz
