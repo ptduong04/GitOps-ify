@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: web-success-rate
+  namespace: demo
+spec:
+  metrics:
+  - name: success-rate
+    interval: 30s
+    successCondition: result >= 0.95  # >= 95% success rate
+    failureLimit: 2                    # fail 2 times in a row → abort
+    provider:
+      # Mock provider - always return success (0.99)
+      # In production, use Prometheus query
+      job:
+        spec:
+          template:
+            spec:
+              containers:
+              - name: mock
+                image: alpine:latest
+                command: ["/bin/sh", "-c"]
+                args:
+                - |
+                  # Mock: random success rate between 0.90-1.00
+                  echo "0.99"
+              restartPolicy: Never
+          backoffLimit: 1
+---
+# Example Prometheus-based AnalysisTemplate (commented out - need Prometheus)
+# apiVersion: argoproj.io/v1alpha1
+# kind: AnalysisTemplate
+# metadata:
+#   name: web-success-rate-prometheus
+#   namespace: demo
+# spec:
+#   metrics:
+#   - name: success-rate
+#     interval: 30s
+#     successCondition: result >= 0.95
+#     failureLimit: 3
+#     provider:
+#       prometheus:
+#         address: http://prometheus-server.monitoring.svc.cluster.local
+#         query: |
+#           sum(rate(http_requests_total{job="web",status!~"5.."}[2m])) 
+#           / 
+#           sum(rate(http_requests_total{job="web"}[2m]))

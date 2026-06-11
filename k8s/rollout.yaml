@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: web
+  namespace: demo
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 5
+  strategy:
+    canary:
+      steps:
+      - setWeight: 20        # 20% traffic to new version
+      - pause: {duration: 1m}  # observe 1 minute
+      - setWeight: 50
+      - pause: {duration: 1m}
+      - setWeight: 100
+      analysis:
+        templates:
+        - templateName: web-success-rate
+        startingStep: 1      # start analysis after first weight change
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: web
+        image: nginx:1.27
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
