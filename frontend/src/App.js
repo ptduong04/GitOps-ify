@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://api.demo.svc.cluster.local';
+// Use relative path so nginx proxy can handle it
+const API_URL = '';
 
 function App() {
   const [apiData, setApiData] = useState(null);
