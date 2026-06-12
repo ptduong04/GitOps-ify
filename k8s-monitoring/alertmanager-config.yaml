@@ -1,69 +1,41 @@
-apiVersion: v1
-kind: Secret
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
 metadata:
-  name: alertmanager-config
-  namespace: monitoring
+  name: demo-email-alerts
+  namespace: demo
   labels:
-    app: kube-prometheus-stack-alertmanager
-type: Opaque
-stringData:
-  alertmanager.yaml: |
-    global:
-      resolve_timeout: 5m
-      
-      # Email configuration
-      smtp_smarthost: 'smtp.gmail.com:587'
-      smtp_from: 'tungduong22112004@gmail.com'
-      smtp_auth_username: 'tungduong22112004@gmail.com'
-      smtp_auth_password: 'kgrjqqfmqbcbrisb'
-      smtp_require_tls: true
-    
-    # Route configuration
-    route:
-      group_by: ['alertname', 'cluster', 'service']
-      group_wait: 10s
-      group_interval: 10s
-      repeat_interval: 12h
-      receiver: 'email-notifications'
-      
-      # Child routes
-      routes:
-      - match:
-          severity: critical
-        receiver: 'email-critical'
-        continue: true
-      
-      - match:
-          severity: warning
-        receiver: 'email-warnings'
-    
-    # Receivers
-    receivers:
-    - name: 'email-notifications'
-      email_configs:
-      - to: 'tungduong22112004@gmail.com'
-        send_resolved: true
-        headers:
-          Subject: '[Monitoring] {{ .GroupLabels.alertname }}'
-    
-    - name: 'email-critical'
-      email_configs:
-      - to: 'tungduong22112004@gmail.com'
-        send_resolved: true
-        headers:
-          Subject: '🔴 [CRITICAL] {{ .GroupLabels.alertname }}'
-    
-    - name: 'email-warnings'
-      email_configs:
-      - to: 'tungduong22112004@gmail.com'
-        send_resolved: true
-        headers:
-          Subject: '⚠️ [WARNING] {{ .GroupLabels.alertname }}'
-    
-    # Inhibition rules
-    inhibit_rules:
-    - source_match:
-        severity: 'critical'
-      target_match:
-        severity: 'warning'
-      equal: ['alertname', 'cluster', 'service']
+    app: demo-email-alerts
+spec:
+  route:
+    groupBy: ["alertname", "namespace", "severity"]
+    groupWait: 10s
+    groupInterval: 30s
+    repeatInterval: 12h
+    receiver: demo-email
+    routes:
+    - receiver: demo-email
+      matchers:
+      - name: severity
+        value: critical
+        matchType: =
+      continue: true
+    - receiver: demo-email
+      matchers:
+      - name: severity
+        value: warning
+        matchType: =
+  receivers:
+  - name: demo-email
+    emailConfigs:
+    - to: tungduong22112004@gmail.com
+      from: tungduong22112004@gmail.com
+      smarthost: smtp.gmail.com:587
+      authUsername: tungduong22112004@gmail.com
+      authPassword:
+        name: alertmanager-smtp-auth
+        key: password
+      requireTLS: true
+      sendResolved: true
+      headers:
+      - key: Subject
+        value: "[GitOps Demo] {{ .CommonLabels.alertname }}"

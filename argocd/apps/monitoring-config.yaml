@@ -1,25 +1,26 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: web
+  name: monitoring-config
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
-  
+
   source:
     repoURL: https://github.com/ptduong04/GitOps-ify.git
     targetRevision: HEAD
-    path: k8s
-  
+    path: k8s-monitoring
+
   destination:
     server: https://kubernetes.default.svc
-    namespace: demo
-  
+    namespace: monitoring
+
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
+    - ServerSideApply=true

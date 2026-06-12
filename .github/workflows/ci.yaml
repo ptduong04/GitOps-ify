@@ -39,12 +39,13 @@ jobs:
     
     - name: Update Kubernetes manifest
       run: |
-        sed -i "s|image:.*demo-app:.*|image: ${{ secrets.DOCKERHUB_USERNAME }}/demo-app:${{ steps.tag.outputs.TAG }}|" k8s/web.yaml
+        sed -i "s|image: .*|image: ${{ secrets.DOCKERHUB_USERNAME }}/demo-app:${{ steps.tag.outputs.TAG }}|" k8s-api/api.yaml
+        sed -i "/name: VERSION/{n;s|value: .*|value: \"${{ steps.tag.outputs.TAG }}\"|}" k8s-api/api.yaml
         
     - name: Commit updated manifest
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
-        git add k8s/web.yaml
+        git add k8s-api/api.yaml
         git commit -m "ci: update image to ${{ steps.tag.outputs.TAG }}" || echo "No changes to commit"
         git push

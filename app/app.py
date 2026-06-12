@@ -4,7 +4,11 @@ from prometheus_client import Counter, Histogram, generate_latest
 
 app = Flask(__name__)
 
-REQUEST_COUNT = Counter('flask_http_request_total', 'Total HTTP requests', ['method', 'endpoint', 'status'])
+REQUEST_COUNT = Counter(
+    'flask_http_request_total',
+    'Total HTTP requests',
+    ['method', 'endpoint', 'status', 'version']
+)
 REQUEST_LATENCY = Histogram('flask_http_request_duration_seconds', 'HTTP request latency')
 
 @app.route('/healthz')
@@ -15,10 +19,11 @@ def health():
 @REQUEST_LATENCY.time()
 def api():
     version = os.getenv('VERSION', 'v1')
-    if random.random() < 0.05:  # 5% error rate
-        REQUEST_COUNT.labels(method='GET', endpoint='/api', status='500').inc()
+    error_rate = float(os.getenv('INJECT_ERROR_RATE', '0'))
+    if random.random() < error_rate:
+        REQUEST_COUNT.labels(method='GET', endpoint='/api', status='500', version=version).inc()
         return {'error': 'random failure', 'version': version}, 500
-    REQUEST_COUNT.labels(method='GET', endpoint='/api', status='200').inc()
+    REQUEST_COUNT.labels(method='GET', endpoint='/api', status='200', version=version).inc()
     return {'message': 'Hello from Flask', 'version': version}, 200
 
 @app.route('/metrics')
