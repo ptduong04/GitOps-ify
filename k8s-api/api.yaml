@@ -73,17 +73,39 @@ spec:
                 command: ["python", "-c"]
                 args:
                 - |
-                  import sys, time, urllib.request
+                  import sys, time, urllib.error, urllib.request
+
+                  url = "http://api-canary.demo.svc.cluster.local/api"
+                  deadline = time.time() + 45
+                  successes = 0
                   failures = 0
-                  for _ in range(40):
+                  saw_ready_endpoint = False
+
+                  while time.time() < deadline:
                       try:
-                          response = urllib.request.urlopen("http://api-canary.demo.svc.cluster.local/api", timeout=2)
-                          if response.status >= 500:
-                              failures += 1
+                          response = urllib.request.urlopen(url, timeout=2)
+                          status = response.status
+                      except urllib.error.HTTPError as exc:
+                          status = exc.code
                       except Exception:
+                          if saw_ready_endpoint:
+                              failures += 1
+                          time.sleep(1)
+                          continue
+
+                      if status < 500:
+                          saw_ready_endpoint = True
+                          successes += 1
+                      elif saw_ready_endpoint:
                           failures += 1
-                      time.sleep(0.2)
-                  sys.exit(1 if failures else 0)
+
+                      if successes >= 10 and failures == 0:
+                          sys.exit(0)
+
+                      time.sleep(0.5)
+
+                  print(f"successes={successes} failures={failures}")
+                  sys.exit(1)
 
 ---
 apiVersion: v1
