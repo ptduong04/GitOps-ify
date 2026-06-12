@@ -14,6 +14,8 @@ spec:
     metadata:
       labels:
         app: api
+      annotations:
+        demo.gitops/revision: stable-v1
     spec:
       containers:
       - name: api
