@@ -15,20 +15,20 @@ spec:
       labels:
         app: api
       annotations:
-        demo.gitops/revision: stable-v1-smoke-v2
+        demo.gitops/revision: bad-v2-canary-test
     spec:
       containers:
       - name: api
-        image: flask-api:v1
+        image: flask-api:v2
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
           name: http
         env:
         - name: VERSION
-          value: "v1"
+          value: "v2"
         - name: INJECT_ERROR_RATE
-          value: "0"
+          value: "1"
         livenessProbe:
           httpGet:
             path: /healthz
