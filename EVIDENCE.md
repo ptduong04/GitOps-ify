@@ -3,19 +3,10 @@ Họ và Tên : Phạm Tùng Dương / XB-DN26-105
 
 Repo nộp bài: <https://github.com/ptduong04/GitOps-ify/tree/main>
 
+---
 
-## 1. Tóm Tắt Tiêu Chí
+## 1. Evidence 1 - Argo CD Synced/Healthy
 
-| Tiêu chí | Bằng chứng | Kết quả |
-|---|---|---|
-| Thay đổi qua Git, Argo CD sync, không drift | Argo CD quản lý các app từ Git; kiểm tra CLI toàn bộ app `Synced/Healthy` | Đạt |
-| Rollback bằng `git revert` dưới 5 phút | Commit lỗi `ab2c7ca`, commit revert `7680a58`, thời gian khoảng 2 phút 36 giây | Đạt |
-| Có SLO và alert gửi email cá nhân khi inject lỗi | Prometheus có rule SLO/API; Gmail nhận alert `KubeJobFailed` từ namespace `demo` | Đạt |
-| Canary bản lỗi tự abort và quay về bản cũ | `AnalysisRun` failed, rollout vẫn available, API trả về version `v1` | Đạt |
-
-## 2. Evidence 1 - Argo CD Synced/Healthy
-
-Ảnh chụp Argo CD Applications:
 
 ![Argo CD Applications](asset/01_argocd_synced_healthy.png)
 
@@ -50,9 +41,10 @@ web                     Synced        Healthy
 
 Kết luận: hệ thống được quản lý theo GitOps, desired state nằm trong Git và Argo CD đã đồng bộ về cluster ở trạng thái `Synced/Healthy`.
 
-## 3. Evidence 2 - Rollback Bằng Git Revert Dưới 5 Phút
+---
 
-Ảnh chụp `git log`:
+## 2. Evidence 2 - Rollback Bằng Git Revert Dưới 5 Phút
+
 
 ![Git revert rollback](asset/02_git_revert_rollback_under_5m.png)
 
@@ -84,9 +76,10 @@ Thời gian từ commit lỗi đến commit revert:
 
 Kết luận: rollback được thực hiện bằng Git, thời gian nhỏ hơn 5 phút.
 
-## 4. Evidence 3 - SLO Và Alert Rules Trong Prometheus
+---
 
-Ảnh chụp Prometheus Alerts:
+## 3. Evidence 3 - SLO Và Alert Rules Trong Prometheus
+
 
 ![Prometheus SLO alert rules](asset/03_prometheus_slo_alert_rules.png)
 
@@ -114,13 +107,15 @@ Trong đó `ErrorBudgetFastBurn` đang ở trạng thái pending, chứng minh S
 
 Kết luận: hệ thống có SLO và alert rule được quản lý qua Git, sau đó được Prometheus load vào runtime.
 
-## 5. Evidence 4 - Alert Gửi Về Email Cá Nhân
+---
 
-Ảnh alert đang firing trong Gmail:
+## 4. Evidence 4 - Alert Gửi Về Email Cá Nhân
+
+Alert đang firing trong Gmail:
 
 ![Alert email firing](asset/04_alert_email_receive02.png)
 
-Ảnh alert đã resolved trong Gmail:
+Alert đã resolved trong Gmail:
 
 ![Alert email resolved](asset/04_alert_email_receive01.png)
 
@@ -143,9 +138,11 @@ summary = Job failed to complete.
 
 Kết luận: alert đã fire và gửi về email cá nhân khi có lỗi trong namespace `demo`.
 
-## 6. Evidence 5 - Canary Lỗi Tự Abort Và Quay Về Bản Cũ
+---
 
-Ảnh chụp trạng thái Argo Rollouts và API response:
+## 5. Evidence 5 - Canary Lỗi Tự Abort Và Quay Về Bản Cũ
+
+Argo Rollouts và API response:
 
 ![Canary abort back to v1](asset/05_canary_abort_back_to_v1.png)
 
@@ -176,13 +173,17 @@ Lưu ý: trong ảnh có một dòng lỗi parse `jsonpath` do cú pháp escape 
 
 Kết luận: canary lỗi đã bị abort, hệ thống quay về bản ổn định `v1`.
 
-## 7. Evidence Bonus - Build Cả Backend Và Frontend
+---
+
+## 6. Evidence Bonus - Build Cả Backend Và Frontend
 
 Phần bonus chứng minh demo không chỉ deploy manifest Kubernetes, mà đã build và chạy được cả frontend lẫn backend sau rollback.
 
-### 7.1 Frontend Gọi Được Backend
+---
 
-Ảnh dashboard ứng dụng:
+### 6.1 Frontend Gọi Được Backend
+
+Dashboard ứng dụng:
 
 ![GitOps dashboard](asset/labbonus.png)
 
@@ -216,9 +217,11 @@ GitOps: ArgoCD
 - Frontend gọi được backend qua service trong cluster.
 - Sau rollback, backend đang trả về version ổn định `v1`.
 
-### 7.2 Argo CD Root App Quản Lý Cả BE Và FE
+---
 
-Ảnh root application trong Argo CD:
+### 6.2 Argo CD Root App Quản Lý Cả BE Và FE
+
+Root application trong Argo CD:
 
 ![Argo CD root app](asset/rootbonus.png)
 
