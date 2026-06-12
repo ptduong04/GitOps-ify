@@ -1,0 +1,119 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: api-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack-prometheus
+    role: alert-rules
+spec:
+  groups:
+  - name: api-availability
+    interval: 30s
+    rules:
+    
+    # High Error Rate Alert
+    - alert: APIHighErrorRate
+      expr: |
+        (
+          sum(rate(flask_http_request_total{status=~"5.."}[5m]))
+          /
+          sum(rate(flask_http_request_total[5m]))
+        ) > 0.05
+      for: 2m
+      labels:
+        severity: critical
+        component: api
+      annotations:
+        summary: "API has high error rate (instance {{ $labels.instance }})"
+        description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+    
+    # API Down Alert
+    - alert: APIDown
+      expr: up{job="api"} == 0
+      for: 1m
+      labels:
+        severity: critical
+        component: api
+      annotations:
+        summary: "API is down (instance {{ $labels.instance }})"
+        description: "API instance {{ $labels.instance }} has been down for more than 1 minute."
+    
+    # High Latency Alert
+    - alert: APIHighLatency
+      expr: |
+        histogram_quantile(0.95,
+          rate(flask_http_request_duration_seconds_bucket[5m])
+        ) > 1
+      for: 5m
+      labels:
+        severity: warning
+        component: api
+      annotations:
+        summary: "API has high latency (instance {{ $labels.instance }})"
+        description: "95th percentile latency is {{ $value }}s over the last 5 minutes."
+    
+    # Canary Deployment Alert
+    - alert: CanaryHighErrorRate
+      expr: |
+        (
+          sum(rate(flask_http_request_total{status=~"5..", version="v2"}[2m]))
+          /
+          sum(rate(flask_http_request_total{version="v2"}[2m]))
+        ) > 0.10
+      for: 1m
+      labels:
+        severity: critical
+        component: canary
+      annotations:
+        summary: "Canary deployment v2 has high error rate"
+        description: "Canary v2 error rate is {{ $value | humanizePercentage }}. Consider rollback!"
+    
+    # SLO Burn Rate Alert (Fast burn)
+    - alert: ErrorBudgetFastBurn
+      expr: |
+        (
+          1 - (
+            sum(rate(flask_http_request_total{status=~"2.."}[1h]))
+            /
+            sum(rate(flask_http_request_total[1h]))
+          )
+        ) > (0.05 * 14.4)  # 99% SLO, burning 14.4x faster
+      for: 5m
+      labels:
+        severity: critical
+        component: slo
+      annotations:
+        summary: "Error budget is burning too fast"
+        description: "At this rate, entire monthly error budget will be consumed in < 2 days."
+  
+  - name: infrastructure
+    interval: 30s
+    rules:
+    
+    # Pod Crash Loop
+    - alert: PodCrashLooping
+      expr: rate(kube_pod_container_status_restarts_total{namespace="demo"}[15m]) > 0
+      for: 5m
+      labels:
+        severity: warning
+        component: infrastructure
+      annotations:
+        summary: "Pod {{ $labels.pod }} is crash looping"
+        description: "Pod has restarted {{ $value }} times in the last 15 minutes."
+    
+    # High Memory Usage
+    - alert: PodHighMemoryUsage
+      expr: |
+        (
+          container_memory_usage_bytes{namespace="demo", pod=~"api-.*"}
+          /
+          container_spec_memory_limit_bytes{namespace="demo", pod=~"api-.*"}
+        ) > 0.9
+      for: 5m
+      labels:
+        severity: warning
+        component: infrastructure
+      annotations:
+        summary: "Pod {{ $labels.pod }} has high memory usage"
+        description: "Memory usage is {{ $value | humanizePercentage }} of limit."
